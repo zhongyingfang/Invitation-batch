@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>邀请函 · 批量生成</title>
+  <style>
+    :root {
+      --cream: #fdf6f0;
+      --paper: #f8efe4;
+      --card: rgba(255,255,255,0.82);
+      --gold: #b8945a;
+      --gold-hover: #9a7a42;
+      --gold-light: #d4b896;
+      --gold-pale: #f5e6d8;
+      --brown: #3d2b1f;
+      --brown-soft: #8b7355;
+      --brown-muted: #b0a090;
+      --radius: 12px;
+      --shadow-sm: 0 1px 3px rgba(61,43,31,0.06);
+      --shadow-md: 0 4px 20px rgba(61,43,31,0.08);
+      --shadow-lg: 0 12px 40px rgba(61,43,31,0.10);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: "PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(212,184,150,0.08) 0%, transparent 70%),
+        linear-gradient(180deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--brown);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 20px 80px;
+    }
+
+    /* ── Main Card ── */
+    .page {
+      width: 100%;
+      max-width: 700px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(184,148,90,0.08);
+      padding: 48px 44px 44px;
+      position: relative;
+    }
+
+    /* ── Header ── */
+    .header { text-align:center; margin-bottom:36px; }
+    .header h1 {
+      font-family: Georgia,"Noto Serif SC","Songti SC",serif;
+      font-size: 30px;
+      font-weight: 400;
+      color: var(--brown);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .header .subtitle {
+      font-size: 14px;
+      color: var(--brown-soft);
+      letter-spacing: 1px;
+    }
+
+    .header::after {
+      content: "";
+      display: block;
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      margin: 20px auto 0;
+    }
+
+    /* ── Steps ── */
+    .steps { display:flex; flex-direction:column; gap:28px; margin-bottom:32px; }
+
+    .step { position:relative; }
+    .step-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .step-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--gold-pale);
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-title {
+      font-family: Georgia,"Noto Serif SC","Songti SC",serif;
+      font-size: 16px;
+      color: var(--brown);
+      letter-spacing: 0.5px;
+    }
+    .step-hint {
+      font-size: 12px;
+      color: var(--brown-muted);
+      margin-left: auto;
+    }
+
+    /* ── File Drop Zone ── */
+    .file-zone {
+      position: relative;
+      border: 2px dashed var(--gold-light);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.25s, background-color 0.25s;
+      background: rgba(245,230,216,0.25);
+    }
+    .file-zone:hover {
+      border-color: var(--gold);
+      background: rgba(245,230,216,0.45);
+    }
+    .file-zone.has-file {
+      border-style: solid;
+      border-color: var(--gold-light);
+      background: rgba(245,230,216,0.40);
+    }
+    .file-zone input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .file-zone-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+    .file-zone-text {
+      font-size: 14px;
+      color: var(--brown-soft);
+    }
+    .file-zone-name {
+      font-size: 13px;
+      color: var(--gold);
+      font-weight: 600;
+      margin-top: 6px;
+      display: none;
+      word-break: break-all;
+    }
+    .file-zone.has-file .file-zone-name { display:block; }
+    .file-zone.has-file .file-zone-text { display:none; }
+    .file-zone.has-file .file-zone-icon { display:none; }
+
+    /* ── Checkbox ── */
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .checkbox-row input[type=checkbox] {
+      appearance: none;
+      width: 18px; height: 18px;
+      border: 2px solid var(--gold-light);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .checkbox-row input[type=checkbox]:checked {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+    .checkbox-row input[type=checkbox]:checked::after {
+      content: "";
+      position: absolute;
+      left: 5px; top: 2px;
+      width: 5px; height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .checkbox-row label { font-size:14px; color:var(--brown-soft); cursor:pointer; }
+
+    /* ── Button ── */
+    .btn-row { text-align:center; margin:8px 0 28px; }
+    .btn {
+      display: inline-block;
+      padding: 14px 48px;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #c4a468 0%, #b8945a 40%, #a07d40 100%);
+      box-shadow: 0 4px 16px rgba(184,148,90,0.30);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(184,148,90,0.40);
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      display: none;
+      margin: 0 0 28px;
+    }
+    .progress-wrap.active { display:block; }
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--gold-pale);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #d4b896, #b8945a, #c4a468);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s ease-in-out infinite;
+      transition: width 0.4s ease;
+    }
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .progress-text {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--brown-soft);
+      text-align: center;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      display: none;
+      margin-bottom: 24px;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .msg.info {
+      display: block;
+      background: #fdf3e4;
+      color: #8b6914;
+      border-left: 3px solid var(--gold);
+    }
+    .msg.error {
+      display: block;
+      background: #fdf0ed;
+      color: #8b3a2a;
+      border-left: 3px solid #c4785a;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-pale), transparent);
+      margin: 0 0 28px;
+    }
+
+    /* ── Guide ── */
+    .guide {
+      background: rgba(245,230,216,0.35);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .guide h3 {
+      font-family: Georgia,"Noto Serif SC","Songti SC",serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--brown);
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+    .guide ol {
+      padding-left: 20px;
+      color: var(--brown-soft);
+      font-size: 13px;
+      line-height: 2;
+    }
+    .guide code {
+      background: rgba(184,148,90,0.12);
+      color: var(--gold);
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: "SF Mono","Menlo",monospace;
+    }
+    .guide .example {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--brown-muted);
+      padding-left: 20px;
+      border-left: 2px solid var(--gold-pale);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--brown-muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 560px) {
+      .page { padding: 32px 20px; border-radius: 0; }
+      .header h1 { font-size: 24px; }
+      .btn { padding: 13px 36px; font-size: 15px; }
+      .file-zone { padding: 22px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>邀请函 · 批量生成</h1>
+      <p class="subtitle">上传数据与模板，一键生成正式函件</p>
+    </div>
+
+    <!-- Flash message -->
+    {% if message %}
+    <div class="msg info">{{ message }}</div>
+    {% endif %}
+
+    <form id="upload-form" method="post" enctype="multipart/form-data">
+
+      <!-- Step 1: Excel -->
+      <div class="steps">
+        <div class="step">
+          <div class="step-label">
+            <span class="step-num">1</span>
+            <span class="step-title">Excel 数据文件</span>
+            <span class="step-hint">.xlsx / .xls</span>
+          </div>
+          <div class="file-zone" id="excel-zone">
+            <input id="excel_file" name="excel_file" type="file" accept=".xlsx,.xlsm,.xls,.xlt,.xltm" required />
+            <div class="file-zone-icon">&#128203;</div>
+            <div class="file-zone-text">拖拽或点击选择数据文件</div>
+            <div class="file-zone-name" id="excel-name"></div>
+          </div>
+        </div>
+
+        <!-- Step 2: PPTX + DOCX -->
+        <div class="step">
+          <div class="step-label">
+            <span class="step-num">2</span>
+            <span class="step-title">模板文件</span>
+            <span class="step-hint">至少上传一个</span>
+          </div>
+          <div style="display:flex; gap:16px; flex-direction:column;">
+            <div class="file-zone" id="pptx-zone">
+              <input id="pptx_template" name="pptx_template" type="file" accept=".pptx" />
+              <div class="file-zone-icon">&#128205;</div>
+              <div class="file-zone-text">PPTX 演示文稿模板</div>
+              <div class="file-zone-name" id="pptx-name"></div>
+            </div>
+            <div class="file-zone" id="docx-zone">
+              <input id="docx_template" name="docx_template" type="file" accept=".docx" />
+              <div class="file-zone-icon">&#128196;</div>
+              <div class="file-zone-text">DOCX 文字文档模板</div>
+              <div class="file-zone-name" id="docx-name"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PNG option -->
+      <div class="checkbox-row">
+        <input id="generate_png" name="generate_png" type="checkbox" checked />
+        <label for="generate_png">同时生成 PNG 图片（需 LibreOffice，Docker 部署已内置）</label>
+      </div>
+
+      <!-- Button -->
+      <div class="btn-row">
+        <button type="submit" class="btn" id="submit-btn">开始生成</button>
+      </div>
+    </form>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-text" id="progress-text">准备中...</div>
+    </div>
+
+    <!-- Error -->
+    <div class="msg error" id="error-msg"></div>
+
+    <div class="divider"></div>
+
+    <!-- Guide -->
+    <div class="guide">
+      <h3>使用说明</h3>
+      <ol>
+        <li>Excel 第一行或第二行为<strong>列名</strong>（如「姓名」「单位」「职务」），后续行为数据</li>
+        <li>模板中填入占位符 <code>{{"{{列名}}"}}</code> 或 <code>{"{列名}"}</code>，程序自动替换</li>
+        <li>示例：模板中「尊敬的 <code>{{"{{姓名}}"}}</code> <code>{{"{{职务}}"}}</code>」→ 生成「尊敬的 张三 总经理」</li>
+      </ol>
+      <div class="example">
+        &#128161; 支持任意列名，用 <code>diagnose.py</code> 可诊断模板与 Excel 的兼容性
+      </div>
+    </div>
+
+    <div class="footer">Docker · Flask · LibreOffice</div>
+  </div>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const progressWrap = document.getElementById('progress-wrap');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const errorMsg = document.getElementById('error-msg');
+
+    /* ── File zone visual feedback ── */
+    function setupFileZone(zoneId, inputId, nameId) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+      const nameEl = document.getElementById(nameId);
+
+      input.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          zone.classList.add('has-file');
+          nameEl.textContent = this.files[0].name;
+        } else {
+          zone.classList.remove('has-file');
+          nameEl.textContent = '';
+        }
+      });
+
+      zone.addEventListener('dragover', function(e) { e.preventDefault(); });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (e.dataTransfer.files.length > 0) {
+          input.files = e.dataTransfer.files;
+          zone.classList.add('has-file');
+          nameEl.textContent = e.dataTransfer.files[0].name;
+        }
+      });
+    }
+
+    setupFileZone('excel-zone', 'excel_file', 'excel-name');
+    setupFileZone('pptx-zone', 'pptx_template', 'pptx-name');
+    setupFileZone('docx-zone', 'docx_template', 'docx-name');
+
+    /* ── Form submit ── */
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const excelFile = document.getElementById('excel_file').files[0];
+      const pptxFile = document.getElementById('pptx_template').files[0];
+      const docxFile = document.getElementById('docx_template').files[0];
+
+      if (!excelFile) {
+        showError('请上传 Excel 数据文件。');
+        return;
+      }
+      if (!pptxFile && !docxFile) {
+        showError('请至少上传一个 PPTX 或 DOCX 模板文件。');
+        return;
+      }
+
+      hideError();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '处理中...';
+      progressWrap.classList.add('active');
+      progressFill.style.width = '0%';
+      progressText.textContent = '准备中...';
+
+      var formData = new FormData(form);
+      fetch('/', { method: 'POST', body: formData })
+        .then(function(res) {
+          if (!res.ok) {
+            return res.text().then(function(t) { throw new Error(t); });
+          }
+          var ct = res.headers.get('content-type') || '';
+          if (ct.indexOf('application/json') !== -1) {
+            return res.json();
+          }
+          return res.text().then(function(t) { throw new Error(t || '未知响应'); });
+        })
+        .then(function(data) {
+          if (!data.run_id) throw new Error('未获取到任务 ID');
+          listenProgress(data.run_id);
+        })
+        .catch(function(err) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '开始生成';
+          progressWrap.classList.remove('active');
+          showError('提交失败：' + err.message);
+        });
+    });
+
+    function listenProgress(runId) {
+      var es = new EventSource('/progress/' + runId);
+      es.onmessage = function(e) {
+        try {
+          var job = JSON.parse(e.data);
+          if (job.status === 'processing' || job.status === 'done') {
+            var pct = job.total > 0 ? Math.round(job.current / job.total * 100) : 0;
+            progressFill.style.width = pct + '%';
+            progressText.textContent = job.current + ' / ' + job.total + '  ' + (job.name || '');
+          }
+          if (job.status === 'done') {
+            es.close();
+            submitBtn.disabled = false;
+            submitBtn.textContent = '开始生成';
+            setTimeout(function() {
+              progressWrap.classList.remove('active');
+            }, 1800);
+            triggerDownload(runId);
+          }
+          if (job.status === 'error') {
+            es.close();
+            submitBtn.disabled = false;
+            submitBtn.textContent = '开始生成';
+            progressWrap.classList.remove('active');
+            showError('处理失败：' + (job.message || '未知错误'));
+          }
+        } catch(err) {}
+      };
+      es.onerror = function() { es.close(); };
+    }
+
+    function triggerDownload(runId) {
+      var a = document.createElement('a');
+      a.href = '/download/' + runId;
+      a.download = 'invitation_result.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+    }
+    function hideError() {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
+  </script>
+</body>
+</html>

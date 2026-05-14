@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  pptx2jpg-web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./web_output:/app/web_output
+    restart: unless-stopped

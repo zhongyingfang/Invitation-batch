@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.zip
+.env
+output_documents/
+output_images/
+output_test/
+output_final_test/
+uploads/
+web_output/
+.venv/
