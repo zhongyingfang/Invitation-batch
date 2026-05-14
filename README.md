@@ -6,9 +6,6 @@
 
 ```
 pptx2jpg/
-├── 中国赣州家具博览会邀请表.xlsx       # 邀请嘉宾数据源
-├── 电子邀请函模板.pptx               # PPTX邀请函模板
-├── （人民政府）邀请函模板.docx       # DOCX邀请函模板
 ├── src/                              # 源代码目录
 │   ├── excel_reader.py              # Excel数据读取模块
 │   ├── pptx_handler.py              # PPTX处理模块
@@ -110,12 +107,11 @@ docker compose up --build
 ## 输出说明
 
 - **output_documents/**: 包含所有生成的PPTX和DOCX文件
-  - `电子邀请函_[姓名].pptx`
-  - `政府邀请函_[姓名].docx`
+  - `[姓名].pptx`
+  - `[姓名].docx`
 
 - **output_images/**: 包含转换后的高清PNG图片
-  - `电子邀请函/` - 电子邀请函转换后的PNG
-  - `政府邀请函/` - 政府邀请函转换后的PNG
+  
 
 ## 系统要求
 
