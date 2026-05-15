@@ -6,15 +6,21 @@
 
 ```
 pptx2jpg/
-├── src/                              # 源代码目录
-│   ├── excel_reader.py              # Excel数据读取模块
-│   ├── pptx_handler.py              # PPTX处理模块
-│   ├── docx_handler.py              # DOCX处理模块
-│   └── batch_processor.py           # 批量处理主程序
-├── output_documents/                 # 生成的PPTX/DOCX文件输出目录
-├── output_images/                    # 生成的PNG图片输出目录
-├── requirements.txt                  # Python依赖列表
-└── README.md                         # 本说明文件
+├── guest_list.xlsx                  # 邀请嘉宾数据源
+├── invitation_template.pptx         # PPTX邀请函模板
+├── gov_invitation_template.docx     # DOCX邀请函模板
+├── src/                             # 源代码目录
+│   ├── excel_reader.py             # Excel数据读取模块
+│   ├── pptx_handler.py             # PPTX处理模块
+│   ├── docx_handler.py             # DOCX处理模块
+│   └── batch_processor.py          # 批量处理主程序
+├── output_documents/                # 生成的PPTX/DOCX文件输出目录
+├── output_images/                   # 生成的PNG图片输出目录
+├── requirements.txt                 # Python依赖列表
+├── Dockerfile                       # Docker构建文件（腾讯云优化）
+├── docker-compose.yml               # Docker Compose配置
+├── deploy.sh                        # 腾讯云一键部署脚本
+└── README.md                        # 本说明文件
 ```
 
 ## 主要功能
@@ -62,33 +68,25 @@ python batch_processor.py
 python gui.py
 ```
 
-该界面允许你添加多个 Excel + 模板映射，每个映射包含：
-- 一个 Excel 数据文件
-- 一个 PPTX 模板文件
-- 一个 DOCX 模板文件
+### 5. Docker Web 版本（推荐服务器部署）
 
-你可以重复添加映射，批量处理多个 Excel 与多个模板的组合。
-
-### 5. Docker Web 版本
-
-项目新增了 Docker Web 界面版本，无需依赖客户本机资源，所有文件处理和 PNG 转换都在容器内完成。
-
-构建镜像：
+#### 腾讯云一键部署
 
 ```bash
-docker build -t pptx2jpg-web .
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-运行容器：
+#### 手动部署
 
 ```bash
-docker run --rm -p 5000:5000 pptx2jpg-web
+docker compose up --build -d
 ```
 
 打开浏览器访问：
 
 ```text
-http://localhost:5000
+http://服务器IP:5000
 ```
 
 在网页界面中上传：
@@ -98,20 +96,12 @@ http://localhost:5000
 
 生成完成后会直接下载 ZIP 包，包含生成的文档和 PNG 图片。
 
-如果使用 Docker Compose：
-
-```bash
-docker compose up --build
-```
-
 ## 输出说明
 
 - **output_documents/**: 包含所有生成的PPTX和DOCX文件
-  - `[姓名].pptx`
-  - `[姓名].docx`
-
 - **output_images/**: 包含转换后的高清PNG图片
-  
+  - `invitations/` - PPTX转换后的PNG
+  - `gov_invitations/` - DOCX转换后的PNG
 
 ## 系统要求
 
@@ -160,16 +150,6 @@ A: 确保系统已安装LibreOffice，且PPTX/DOCX文件格式正确
 
 Q: 如何调整PNG分辨率？
 A: 在 `convert_to_png()` 方法中修改 `dpi` 参数，默认为300dpi（高清打印质量）
-
-## 后续改进方向
-
-1. 增加GUI界面
-2. 支持批量导入多个Excel文件
-3. 支持自定义模板映射配置
-4. 添加日志记录功能
-5. 支持更多文件格式（XLS、ODT等）
-6. 并行处理以提高效率
-7. 错误重试机制
 
 ---
 

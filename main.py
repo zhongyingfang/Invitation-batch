@@ -29,9 +29,9 @@ def main():
     # 检查必需文件
     print("检查必需文件...")
     required_files = [
-        '中国赣州家具博览会邀请表.xlsx',
-        '电子邀请函模板.pptx',
-        '（人民政府）邀请函模板.docx'
+        'guest_list.xlsx',
+        'invitation_template.pptx',
+        'gov_invitation_template.docx'
     ]
     
     for filename in required_files:

@@ -7,3 +7,7 @@ uploads
 web_output
 .env
 .git
+.gitignore
+*.md
+run.sh
+deploy.sh

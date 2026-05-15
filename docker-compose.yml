@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   pptx2jpg-web:
     build: .
@@ -8,3 +7,8 @@ services:
       - ./uploads:/app/uploads
       - ./web_output:/app/web_output
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

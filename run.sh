@@ -51,9 +51,9 @@ from batch_processor import BatchProcessor
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 文件路径
-excel_file = os.path.join(script_dir, '中国赣州家具博览会邀请表.xlsx')
-pptx_template = os.path.join(script_dir, '电子邀请函模板.pptx')
-docx_template = os.path.join(script_dir, '（人民政府）邀请函模板.docx')
+excel_file = os.path.join(script_dir, 'guest_list.xlsx')
+pptx_template = os.path.join(script_dir, 'invitation_template.pptx')
+docx_template = os.path.join(script_dir, 'gov_invitation_template.docx')
 output_docs = os.path.join(script_dir, 'output_documents')
 output_images = os.path.join(script_dir, 'output_images')
 

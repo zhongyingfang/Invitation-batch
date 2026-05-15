@@ -9,6 +9,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.util import Pt
 from typing import Dict, Any
 from PIL import Image
+from utils import find_soffice
 import io
 
 
@@ -296,10 +297,14 @@ class PPTXHandler:
             # 使用LibreOffice将PPTX转换为PDF（中间步骤）
             pdf_path = os.path.join(png_output_dir, f"{base_name}.pdf")
             
-            # 尝试使用libreoffice转换
+            soffice_exe = find_soffice()
+            if not soffice_exe:
+                print("未找到 LibreOffice，跳过 PNG 转换。（安装 LibreOffice 或设置 LO_PATH 环境变量）")
+                return []
+
             try:
                 cmd = [
-                    "libreoffice",
+                    soffice_exe,
                     "--headless",
                     "--convert-to", "pdf",
                     "--outdir", png_output_dir,

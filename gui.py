@@ -22,7 +22,7 @@ class InviteGeneratorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("批量邀请函生成器")
-        self.root.geometry("820x600")
+        self.root.geometry("820x660")
         self.root.resizable(False, False)
 
         self.mappings = []
@@ -61,10 +61,16 @@ class InviteGeneratorGUI:
         tk.Button(frame, text="浏览...", command=self.select_output_images).grid(row=row, column=3, padx=(8, 0))
 
         row += 1
+        self.generate_png_var = tk.BooleanVar(value=True)
+        self.png_check = tk.Checkbutton(frame, text="生成 PNG 图片（需安装 LibreOffice，未安装请取消勾选）",
+                                         variable=self.generate_png_var)
+        self.png_check.grid(row=row, column=0, columnspan=3, pady=(12, 0), sticky="w")
+
+        row += 1
         self.run_button = tk.Button(frame, text="开始生成", width=16, command=self.start_processing, bg="#4CAF50", fg="white")
-        self.run_button.grid(row=row, column=0, pady=(16, 0), sticky="w")
-        tk.Button(frame, text="打开文档输出目录", command=self.open_output_docs).grid(row=row, column=1, pady=(16, 0), sticky="w")
-        tk.Button(frame, text="打开图片输出目录", command=self.open_output_images).grid(row=row, column=2, pady=(16, 0), sticky="w")
+        self.run_button.grid(row=row, column=0, pady=(12, 0), sticky="w")
+        tk.Button(frame, text="打开文档输出目录", command=self.open_output_docs).grid(row=row, column=1, pady=(12, 0), sticky="w")
+        tk.Button(frame, text="打开图片输出目录", command=self.open_output_images).grid(row=row, column=2, pady=(12, 0), sticky="w")
 
         row += 1
         tk.Label(frame, text="执行日志:", anchor="w").grid(row=row, column=0, columnspan=4, sticky="w", pady=(16, 0))
@@ -84,18 +90,33 @@ class InviteGeneratorGUI:
         if not excel_paths:
             return
 
-        pptx_path = filedialog.askopenfilename(
-            title="选择 PPTX 模板文件",
-            filetypes=[("PowerPoint 文件", "*.pptx")]
-        )
-        if not pptx_path:
-            return
+        # 询问是否选择 PPTX 模板
+        use_pptx = messagebox.askyesno("PPTX 模板", "是否选择 PPTX 模板？\n\n选「是」继续选择 PPTX 文件\n选「否」跳过 PowerPoint 模板")
+        pptx_path = None
+        if use_pptx:
+            pptx_path = filedialog.askopenfilename(
+                title="选择 PPTX 模板文件",
+                filetypes=[("PowerPoint 文件", "*.pptx")]
+            )
+            if not pptx_path:
+                # 用户取消了，再问一次是否要跳过
+                if not messagebox.askyesno("跳过 PPTX", "未选择 PPTX 模板，是否跳过（不生成 PPTX 邀请函）？"):
+                    return
 
-        docx_path = filedialog.askopenfilename(
-            title="选择 DOCX 模板文件",
-            filetypes=[("Word 文件", "*.docx")]
-        )
-        if not docx_path:
+        # 询问是否选择 DOCX 模板
+        use_docx = messagebox.askyesno("DOCX 模板", "是否选择 DOCX 模板？\n\n选「是」继续选择 DOCX 文件\n选「否」跳过 Word 模板")
+        docx_path = None
+        if use_docx:
+            docx_path = filedialog.askopenfilename(
+                title="选择 DOCX 模板文件",
+                filetypes=[("Word 文件", "*.docx")]
+            )
+            if not docx_path:
+                if not messagebox.askyesno("跳过 DOCX", "未选择 DOCX 模板，是否跳过（不生成 DOCX 邀请函）？"):
+                    return
+
+        if not pptx_path and not docx_path:
+            messagebox.showwarning("输入错误", "请至少选择一种模板（PPTX 或 DOCX）。")
             return
 
         for excel_path in excel_paths:
@@ -107,7 +128,13 @@ class InviteGeneratorGUI:
             self.mappings.append(mapping)
             self.mapping_listbox.insert(tk.END, self._format_mapping(mapping))
 
-        self.log(f"已添加 {len(excel_paths)} 个 Excel 映射。\n")
+        count = len(excel_paths)
+        types = []
+        if pptx_path:
+            types.append("PPTX")
+        if docx_path:
+            types.append("DOCX")
+        self.log(f"已添加 {count} 个 Excel + {'/'.join(types)} 映射。\n")
 
     def remove_selected_mappings(self):
         selected = list(self.mapping_listbox.curselection())
@@ -128,9 +155,9 @@ class InviteGeneratorGUI:
 
     def _format_mapping(self, mapping):
         excel_name = Path(mapping["excel"]).name
-        pptx_name = Path(mapping["pptx"]).name
-        docx_name = Path(mapping["docx"]).name
-        return f"Excel: {excel_name} | PPTX: {pptx_name} | DOCX: {docx_name}"
+        pptx = Path(mapping["pptx"]).name if mapping["pptx"] else "(未选择)"
+        docx = Path(mapping["docx"]).name if mapping["docx"] else "(未选择)"
+        return f"Excel: {excel_name} | PPTX: {pptx} | DOCX: {docx}"
 
     def select_output_docs(self):
         path = filedialog.askdirectory(title="选择输出文档目录")
@@ -150,12 +177,9 @@ class InviteGeneratorGUI:
             return False
 
         for mapping in self.mappings:
-            for path_value, label in [
-                (mapping["excel"], "Excel 文件"),
-                (mapping["pptx"], "PPTX 模板"),
-                (mapping["docx"], "DOCX 模板")
-            ]:
-                if not Path(path_value).exists():
+            for key, label in [("excel", "Excel 文件"), ("pptx", "PPTX 模板"), ("docx", "DOCX 模板")]:
+                path_value = mapping.get(key)
+                if path_value and not Path(path_value).exists():
                     messagebox.showwarning("文件不存在", f"{label} 不存在：{path_value}")
                     return False
 
@@ -173,7 +197,8 @@ class InviteGeneratorGUI:
             return
 
         self.run_button.config(state="disabled")
-        self.log("开始批量生成，请稍候...\n")
+        png = self.generate_png_var.get()
+        self.log(f"开始批量生成（{'生成' if png else '跳过'} PNG），请稍候...\n")
         thread = threading.Thread(target=self._run_processor, daemon=True)
         thread.start()
 
@@ -184,11 +209,19 @@ class InviteGeneratorGUI:
             output_docs_dir.mkdir(parents=True, exist_ok=True)
             output_images_dir.mkdir(parents=True, exist_ok=True)
 
+            generate_png = self.generate_png_var.get()
+
             for idx, mapping in enumerate(self.mappings, start=1):
+                types = []
+                if mapping["pptx"]:
+                    types.append("PPTX")
+                if mapping["docx"]:
+                    types.append("DOCX")
+
                 self.log(f"\n正在处理映射 {idx}/{len(self.mappings)}:\n")
                 self.log(f"  Excel: {mapping['excel']}\n")
-                self.log(f"  PPTX: {mapping['pptx']}\n")
-                self.log(f"  DOCX: {mapping['docx']}\n")
+                self.log(f"  PPTX: {mapping['pptx'] or '(跳过)'}\n")
+                self.log(f"  DOCX: {mapping['docx'] or '(跳过)'}\n")
 
                 processor = BatchProcessor(
                     mapping["excel"],
@@ -200,7 +233,7 @@ class InviteGeneratorGUI:
                 self.log("  读取 Excel 数据...\n")
                 processor.read_data()
                 self.log(f"  读取完成：{len(processor.data)} 条记录。\n")
-                processor.process(generate_png=True)
+                processor.process(generate_png=generate_png)
 
             self.log("\n所有映射处理完成。输出已保存到指定目录。\n")
             messagebox.showinfo("完成", "批量生成已完成！")

@@ -9,6 +9,7 @@ from docx import Document
 from docx.shared import Pt
 from docx.oxml.ns import qn
 from typing import Dict, Any
+from utils import find_soffice
 import subprocess
 
 
@@ -328,10 +329,14 @@ class DOCXHandler:
             # 使用LibreOffice将DOCX转换为PDF（中间步骤）
             pdf_path = os.path.join(png_output_dir, f"{base_name}.pdf")
 
-            # 尝试使用libreoffice转换
+            soffice_exe = find_soffice()
+            if not soffice_exe:
+                print("未找到 LibreOffice，跳过 PNG 转换。（安装 LibreOffice 或设置 LO_PATH 环境变量）")
+                return []
+
             try:
                 cmd = [
-                    "libreoffice",
+                    soffice_exe,
                     "--headless",
                     "--convert-to", "pdf",
                     "--outdir", png_output_dir,
@@ -367,7 +372,7 @@ class DOCXHandler:
 
 
 if __name__ == "__main__":
-    handler = DOCXHandler("（人民政府）邀请函模板.docx", "output_documents")
+    handler = DOCXHandler("gov_invitation_template.docx", "output_documents")
     data = {
         "姓名": "李四",
         "单位": "测试机构",

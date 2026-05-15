@@ -164,7 +164,7 @@ class ExcelReader:
 
 
 if __name__ == "__main__":
-    reader = ExcelReader("中国赣州家具博览会邀请表.xlsx")
+    reader = ExcelReader("guest_list.xlsx")
     data = reader.read()
     for i, record in enumerate(data[:3], 1):
         print(f"记录 {i}: {record}")

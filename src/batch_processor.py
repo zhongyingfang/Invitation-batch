@@ -67,11 +67,11 @@ class BatchProcessor:
 
                 if generate_png:
                     if self.pptx_handler and pptx_file:
-                        pptx_png_dir = os.path.join(self.output_images_dir, "电子邀请函")
+                        pptx_png_dir = os.path.join(self.output_images_dir, "invitations")
                         self.pptx_handler.convert_to_png(pptx_file, pptx_png_dir)
 
                     if self.docx_handler and docx_file:
-                        docx_png_dir = os.path.join(self.output_images_dir, "政府邀请函")
+                        docx_png_dir = os.path.join(self.output_images_dir, "gov_invitations")
                         self.docx_handler.convert_to_png(docx_file, docx_png_dir)
 
                 success_count += 1
@@ -104,9 +104,9 @@ def main():
     script_dir = Path(__file__).parent.parent
     
     # 文件路径配置
-    excel_file = script_dir / "中国赣州家具博览会邀请表.xlsx"
-    pptx_template = script_dir / "电子邀请函模板.pptx"
-    docx_template = script_dir / "（人民政府）邀请函模板.docx"
+    excel_file = script_dir / "guest_list.xlsx"
+    pptx_template = script_dir / "invitation_template.pptx"
+    docx_template = script_dir / "gov_invitation_template.docx"
     output_docs = script_dir / "output_documents"
     output_images = script_dir / "output_images"
     
