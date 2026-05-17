@@ -38,6 +38,45 @@ class BatchProcessor:
 
         return self.data
     
+    def _get_file_name_from_record(self, record: Dict[str, Any], index: int) -> str:
+        """从记录中获取用于文件名的值
+
+        按优先级尝试不同的列名（中英文）：
+        1. 姓名 / name
+        2. 组织 / organization / org
+        3. 单位 / unit / department
+        4. 公司 / company
+        5. 机构 / institution / agency
+        6. 第一个有值的列
+
+        Args:
+            record: 数据记录字典
+            index: 记录索引（用于回退命名）
+
+        Returns:
+            用于文件名的字符串
+        """
+        name_priority = [
+            "姓名", "name",
+            "组织", "organization", "org",
+            "单位", "unit", "department",
+            "公司", "company",
+            "机构", "institution", "agency",
+        ]
+
+        for col_name in name_priority:
+            value = record.get(col_name)
+            if value and str(value).strip():
+                return str(value).strip()
+
+        # 如果没有找到上述列，使用第一个有值的列
+        for key, value in record.items():
+            if value and str(value).strip():
+                return str(value).strip()
+
+        # 如果所有列都为空，使用默认名称
+        return f"record_{index}"
+
     def process(self, generate_png: bool = True, progress_callback: Optional[Callable[[int, int, str], None]] = None):
         if not self.data:
             self.read_data()
@@ -50,19 +89,18 @@ class BatchProcessor:
 
         for i, record in enumerate(self.data, 1):
             try:
-                name = record.get("姓名", f"person_{i}")
-
+                name = self._get_file_name_from_record(record, i)
                 print(f"\n[{i}/{total}] 处理: {name}")
 
                 pptx_file = None
                 docx_file = None
 
                 if self.pptx_handler:
-                    pptx_output_name = str(name)
+                    pptx_output_name = name
                     pptx_file = self.pptx_handler.fill_template(record, pptx_output_name)
 
                 if self.docx_handler:
-                    docx_output_name = str(name)
+                    docx_output_name = name
                     docx_file = self.docx_handler.fill_template(record, docx_output_name)
 
                 if generate_png:
