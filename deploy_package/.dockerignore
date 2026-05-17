@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+output_documents
+output_images
+uploads
+web_output
+.env
+.git
+.gitignore
+*.md
+run.sh
+deploy.sh
