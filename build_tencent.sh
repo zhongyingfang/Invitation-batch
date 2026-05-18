@@ -9,24 +9,44 @@ echo "=============================================="
 echo " 腾讯云服务器 - Docker 镜像构建优化脚本"
 echo "=============================================="
 
-# 配置Docker使用腾讯云镜像加速器
+# 配置Docker使用国内镜像加速器
 echo "[1/4] 配置Docker镜像加速器..."
 if [ ! -f /etc/docker/daemon.json ]; then
     sudo mkdir -p /etc/docker
     sudo tee /etc/docker/daemon.json <<-'EOF'
 {
   "registry-mirrors": [
-    "https://mirror.ccs.tencentyun.com"
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.1panel.live",
+    "https://hub.rat.dev",
+    "https://dockerpull.com"
   ]
 }
 EOF
-    echo "已配置腾讯云Docker镜像加速器"
+    echo "已配置多个Docker镜像加速器（腾讯云+其他国内源）"
     sudo systemctl daemon-reload
     sudo systemctl restart docker
     echo "Docker服务已重启"
 else
-    echo "Docker配置已存在，跳过配置"
-    cat /etc/docker/daemon.json
+    echo "检测到已有Docker配置，备份并更新..."
+    sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
+    
+    # 合并配置，添加更多镜像源
+    sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.1panel.live",
+    "https://hub.rat.dev",
+    "https://dockerpull.com",
+    "https://docker.anyhub.us.kg"
+  ]
+}
+EOF
+    echo "已更新Docker镜像加速器配置"
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
+    echo "Docker服务已重启"
 fi
 
 # 清理旧的构建缓存

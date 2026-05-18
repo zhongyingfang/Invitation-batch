@@ -1,4 +1,6 @@
-FROM python:3.12-slim
+# 使用国内镜像源拉取Python基础镜像（解决Docker Hub访问慢的问题）
+# 默认使用阿里云镜像加速器
+FROM docker.m.daocloud.io/library/python:3.12-slim
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1
