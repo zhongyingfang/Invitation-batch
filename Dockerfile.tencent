@@ -1,4 +1,4 @@
-# 腾讯云优化版 Dockerfile - 大幅减少包依赖，加快构建速度
+# 腾讯云优化版 Dockerfile - 减少apt包依赖，加快构建速度
 # 针对腾讯云服务器优化，使用最小化安装策略
 
 FROM python:3.12-slim
@@ -15,12 +15,11 @@ deb https://mirrors.cloud.tencent.com/debian ${VERSION_CODENAME} main contrib no
 deb https://mirrors.cloud.tencent.com/debian ${VERSION_CODENAME}-updates main contrib non-free
 EOF
 
-# 优化策略（比原版快约50-70%）：
-# 1. 只安装 LibreOffice Writer（移除 Impress，节省约100MB）
-# 2. 移除 ttf-mscorefonts-installer（该包需从外部服务器下载字体，极慢）
-# 3. 移除 fonts-dejavu-core（使用 liberation 字体替代）
-# 4. 使用 --no-install-recommends 减少依赖
-# 5. 只安装必要的中文字体
+# 只安装必要的包，减少下载量
+# 优化策略：
+# 1. 只安装LibreOffice Writer（不需要Impress）
+# 2. 使用最小字体集
+# 3. 不安装ttf-mscorefonts-installer（需要从外部下载）
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libreoffice-writer \
