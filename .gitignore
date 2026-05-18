@@ -9,3 +9,6 @@ output_final_test/
 uploads/
 web_output/
 .venv/
+*.pdf
+*.png
+*.docx

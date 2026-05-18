@@ -29,13 +29,24 @@ RUN apt-get update \
        fonts-noto-cjk \
        fonts-liberation \
        fonts-dejavu-core \
+       fonts-dejavu-extra \
+       fonts-noto \
+       fonts-noto-mono \
+       fonts-crosextra-caladea \
+       fonts-crosextra-carlito \
     && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
     && apt-get install -y --no-install-recommends ttf-mscorefonts-installer \
+    && apt-get install -y --no-install-recommends \
+       fonts-arphic-ukai \
+       fonts-arphic-uming \
+       fonts-wqy-microhei \
+       fonts-wqy-zenhei \
+       fonts-droid-fallback \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -f
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -i https://mirrors.tencentyun.com/pypi/simple -r requirements.txt
+RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple -r requirements.txt
 
 COPY . ./
 

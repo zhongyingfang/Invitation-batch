@@ -290,6 +290,41 @@ class DOCXHandler:
 
             for paragraph in doc.paragraphs:
                 replace_paragraph_runs(paragraph)
+                
+                # 设置段落格式以防止自动断行
+                p_pr = paragraph._element.get_or_add_pPr()
+                
+                # 添加keepNext（与下一段保持在一起）
+                keep_next = p_pr.find(W_NS + 'keepNext')
+                if keep_next is None:
+                    from lxml import etree
+                    keep_next = etree.SubElement(p_pr, W_NS + 'keepNext')
+                keep_next.set(qn('w:val'), '0')
+                
+                # 添加keepLines（段落内保持连续，不分页）
+                keep_lines = p_pr.find(W_NS + 'keepLines')
+                if keep_lines is None:
+                    from lxml import etree
+                    keep_lines = etree.SubElement(p_pr, W_NS + 'keepLines')
+                keep_lines.set(qn('w:val'), '0')
+                
+                # 添加 widowControl（寡妇/孤儿控制）
+                widow_control = p_pr.find(W_NS + 'widowControl')
+                if widow_control is None:
+                    from lxml import etree
+                    widow_control = etree.SubElement(p_pr, W_NS + 'widowControl')
+                widow_control.set(qn('w:val'), '1')
+                
+                # 设置段落不允许断字（no hyphenation）
+                # 通过设置字间距来避免自动断行
+                for run in paragraph.runs:
+                    r_pr = run._element.get_or_add_rPr()
+                    # 设置禁止断字
+                    no_hyphen = r_pr.find(W_NS + 'noHyphen')
+                    if no_hyphen is None:
+                        from lxml import etree
+                        no_hyphen = etree.SubElement(r_pr, W_NS + 'noHyphen')
+                    no_hyphen.set(qn('w:val'), '1')
 
             # 替换表格中的文本，按段落处理以支持跨run占位符
             for table in doc.tables:
@@ -297,6 +332,35 @@ class DOCXHandler:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
                             replace_paragraph_runs(paragraph)
+                            
+                            # 同样为表格中的段落设置格式
+                            p_pr = paragraph._element.get_or_add_pPr()
+                            
+                            keep_next = p_pr.find(W_NS + 'keepNext')
+                            if keep_next is None:
+                                from lxml import etree
+                                keep_next = etree.SubElement(p_pr, W_NS + 'keepNext')
+                            keep_next.set(qn('w:val'), '0')
+                            
+                            keep_lines = p_pr.find(W_NS + 'keepLines')
+                            if keep_lines is None:
+                                from lxml import etree
+                                keep_lines = etree.SubElement(p_pr, W_NS + 'keepLines')
+                            keep_lines.set(qn('w:val'), '0')
+                            
+                            widow_control = p_pr.find(W_NS + 'widowControl')
+                            if widow_control is None:
+                                from lxml import etree
+                                widow_control = etree.SubElement(p_pr, W_NS + 'widowControl')
+                            widow_control.set(qn('w:val'), '1')
+                            
+                            for run in paragraph.runs:
+                                r_pr = run._element.get_or_add_rPr()
+                                no_hyphen = r_pr.find(W_NS + 'noHyphen')
+                                if no_hyphen is None:
+                                    from lxml import etree
+                                    no_hyphen = etree.SubElement(r_pr, W_NS + 'noHyphen')
+                                no_hyphen.set(qn('w:val'), '1')
 
             # 保存DOCX文件
             output_path = os.path.join(self.output_dir, f"{output_name}.docx")
@@ -332,40 +396,89 @@ class DOCXHandler:
 
             pdf_created = False
 
-            # 优先尝试使用Word COM接口转换（保持100%排版一致性）
-            if sys.platform == 'win32':
-                try:
-                    import win32com.client as win32
-                    word = win32.Dispatch('Word.Application')
-                    word.Visible = False
-                    word.DisplayAlerts = 0
-                    abs_docx_path = os.path.abspath(docx_path)
-                    abs_pdf_path = os.path.abspath(pdf_path)
-                    word_doc = word.Documents.Open(abs_docx_path)
-                    word_doc.SaveAs(abs_pdf_path, FileFormat=17)  # 17 = wdFormatPDF
-                    word_doc.Close()
-                    word.Quit()
-                    print(f"已转换为PDF: {pdf_path}")
-                    pdf_created = True
-                except ImportError:
-                    print("未安装 pywin32，跳过Word COM转换")
-                except Exception as e:
-                    print(f"Word COM转换失败: {e}，将使用LibreOffice转换")
+            # 使用LibreOffice转换为PDF
+            soffice_exe = find_soffice()
+            if not soffice_exe:
+                print("未找到 LibreOffice，跳过 PNG 转换。（安装 LibreOffice 或设置 LO_PATH 环境变量）")
+                return []
 
-            # 如果Word转换失败，使用LibreOffice
-            if not pdf_created:
-                soffice_exe = find_soffice()
-                if not soffice_exe:
-                    print("未找到 LibreOffice，跳过 PNG 转换。（安装 LibreOffice 或设置 LO_PATH 环境变量）")
-                    return []
+            # 创建LibreOffice用户配置目录（headless模式需要）
+            user_profile = os.path.join(png_output_dir, ".libreoffice_profile")
+            os.makedirs(user_profile, exist_ok=True)
+            
+            # 创建LibreOffice配置文件以优化排版，避免自动断行
+            config_dir = os.path.join(user_profile, "user", "config")
+            os.makedirs(config_dir, exist_ok=True)
+            
+            # 创建registrymodifications.xcu配置文件
+            config_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <item oor:path="/org.openoffice.Office.Writer/Content/Visibility">
+    <prop oor:name="ShowParagraphEnd" oor:op="fuse"><value>false</value></prop>
+  </item>
+  <item oor:path="/org.openoffice.Office.Writer/Content/Formatting">
+    <prop oor:name="ShowHyphens" oor:op="fuse"><value>false</value></prop>
+  </item>
+  <item oor:path="/org.openoffice.Office.Writer/Compatibility">
+    <prop oor:name="UseFormerLineSpacing" oor:op="fuse"><value>true</value></prop>
+    <prop oor:name="AddParaSpacingToTableCells" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="UseFormerObjectPos" oor:op="fuse"><value>true</value></prop>
+    <prop oor:name="UseFormerTextWrapping" oor:op="fuse"><value>true</value></prop>
+    <prop oor:name="ConsiderWrapOnObjPos" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="AddSpacingBetweenAsianText" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="AddSpacingBetweenAsianAndNumber" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="AddSpacingBetweenAsianAndLatin" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="SingleLineSpacingAtBottom" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="TabStopAtPageStart" oor:op="fuse"><value>true</value></prop>
+  </item>
+  <item oor:path="/org.openoffice.Office.Writer/Print">
+    <prop oor:name="PrintTextPlaceholder" oor:op="fuse"><value>false</value></prop>
+  </item>
+  <item oor:path="/org.openoffice.Office.Writer/Layout">
+    <prop oor:name="TextBoundaries" oor:op="fuse"><value>false</value></prop>
+    <prop oor:name="TextFields" oor:op="fuse"><value>false</value></prop>
+  </item>
+</oor:items>
+'''
+            config_file = os.path.join(config_dir, "registrymodifications.xcu")
+            with open(config_file, 'w', encoding='utf-8') as f:
+                f.write(config_content)
 
-                # 创建LibreOffice用户配置目录（headless模式需要）
-                user_profile = os.path.join(png_output_dir, ".libreoffice_profile")
-                os.makedirs(user_profile, exist_ok=True)
+            # 尝试多种转换方式
+            convert_success = False
+            
+            # 方式1: 使用标准pdf filter，添加优化参数
+            try:
+                cmd = [
+                    soffice_exe,
+                    "--headless",
+                    "--norestore",
+                    "--invisible",
+                    "--nodefault",
+                    "--nolockcheck",
+                    "--convert-to", "pdf:writer_pdf_Export",
+                    "--outdir", png_output_dir,
+                    docx_path
+                ]
+                env = os.environ.copy()
+                env["HOME"] = user_profile
+                
+                # 设置环境变量以优化排版
+                env["SAL_VCL_FORCEX11CAIRO"] = "0"
+                env["SAL_USE_VCLPLUGIN"] = "gen"  # 使用通用后端，避免X11渲染问题
+                env["DISPLAY"] = ""  # 确保不使用X11
+                env["QT_QPA_PLATFORM"] = "offscreen"  # 禁用Qt平台
+                
+                subprocess.run(cmd, check=True, capture_output=True, timeout=60, env=env)
+                
+                if os.path.exists(pdf_path):
+                    print(f"已转换为PDF（LibreOffice）: {pdf_path}")
+                    convert_success = True
+            except Exception as e:
+                print(f"LibreOffice转换失败(方式1): {e}")
 
-                # 尝试多种转换方式
-                convert_success = False
-                # 方式1: 使用标准pdf filter（通常效果最好）
+            # 方式2: 使用默认pdf filter
+            if not convert_success:
                 try:
                     cmd = [
                         soffice_exe,
@@ -379,32 +492,14 @@ class DOCXHandler:
                     env = os.environ.copy()
                     env["HOME"] = user_profile
                     subprocess.run(cmd, check=True, capture_output=True, timeout=60, env=env)
-                    print(f"已转换为PDF: {pdf_path}")
-                    convert_success = True
-                except Exception as e:
-                    print(f"LibreOffice转换失败(方式1): {e}")
-
-                # 方式2: 使用writer_pdf_Export filter
-                if not convert_success:
-                    try:
-                        cmd = [
-                            soffice_exe,
-                            "--headless",
-                            "--norestore",
-                            "--invisible",
-                            "--convert-to", "pdf:writer_pdf_Export",
-                            "--outdir", png_output_dir,
-                            docx_path
-                        ]
-                        env = os.environ.copy()
-                        env["HOME"] = user_profile
-                        subprocess.run(cmd, check=True, capture_output=True, timeout=60, env=env)
-                        print(f"已转换为PDF: {pdf_path}")
+                    
+                    if os.path.exists(pdf_path):
+                        print(f"已转换为PDF（LibreOffice）: {pdf_path}")
                         convert_success = True
-                    except Exception as e:
-                        print(f"LibreOffice转换失败(方式2): {e}")
+                except Exception as e:
+                    print(f"LibreOffice转换失败(方式2): {e}")
 
-                pdf_created = convert_success
+            pdf_created = convert_success
 
             # 使用pdf2image将PDF转换为PNG
             if pdf_created and os.path.exists(pdf_path):
